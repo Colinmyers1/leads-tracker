@@ -28,10 +28,37 @@ function render(leads) {
                 <a target='_blank' href='${leads[i]}'>
                     ${leads[i]}
                 </a>
+                <button class="delete-lead-btn" data-lead="${leads[i]}">×</button>
             </li>
         `;
   }
   ulEl.innerHTML = listItems;
+
+  // Add event listeners to all delete buttons
+  const deleteLeadBtns = document.querySelectorAll(".delete-lead-btn");
+  deleteLeadBtns.forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const leadToDelete = this.dataset.lead;
+      // Find the specific lead in the database and remove it
+      onValue(
+        referenceInDB,
+        function (snapshot) {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            // Find the key of the lead we want to delete
+            const keyToDelete = Object.keys(data).find(
+              (key) => data[key] === leadToDelete
+            );
+            if (keyToDelete) {
+              const leadRef = ref(database, `leads/${keyToDelete}`);
+              remove(leadRef);
+            }
+          }
+        },
+        { onlyOnce: true }
+      );
+    });
+  });
 }
 
 onValue(referenceInDB, function (snapshot) {
@@ -48,7 +75,18 @@ deleteBtn.addEventListener("dblclick", function () {
   ulEl.innerHTML = "";
 });
 
+// Add event listener for Enter key
+inputEl.addEventListener("keyup", function (event) {
+  if (event.key === "Enter" && inputEl.value.trim() !== "") {
+    push(referenceInDB, inputEl.value);
+    inputEl.value = "";
+  }
+});
+
+// Add event listener for Save button
 inputBtn.addEventListener("click", function () {
-  push(referenceInDB, inputEl.value);
-  inputEl.value = "";
+  if (inputEl.value.trim() !== "") {
+    push(referenceInDB, inputEl.value);
+    inputEl.value = "";
+  }
 });
